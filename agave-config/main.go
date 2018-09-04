@@ -1,69 +1,46 @@
 package main
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
-	"net/http"
-	"net/url"
 	"os"
-	"strings"
+	"strconv"
 	"time"
+
+	"github.com/spf13/viper"
 )
 
-// agaveConfigs stores the credentials necessary to interact with the Agave API.
-type agaveConfigs struct {
-	TenantId     string `json:"tenantid"`
-	BaseUrl      string `json:"baseurl"`
-	ApiSecret    string `json:"apisecret"`
-	ApiKey       string `json:"apikey"`
-	Username     string `json:"username"`
-	AccessToken  string `json:"access_token"`
-	RefreshToken string `json:"refresh_token"`
-	CreatedAt    string `json:"created_at"`
-	ExpiresIn    string `json:"expires_in"`
-	ExpiresAt    string `json:"expires_at"`
+// Configurations stores the credentials necessary to interact with the Agave API.
+type Configurations struct {
+	TenantId     string `mapstructure:"tenantid" json:"tenantid"`
+	BaseUrl      string `mapstructure:"baseurl" json:"baseurl"`
+	ApiSecret    string `mapstructure:"apisecret" json:"apisecret"`
+	ApiKey       string `mapstructure:"apikey" json:"apikey"`
+	Username     string `mapstructure:"username" json:"username"`
+	AccessToken  string `mapstructure:"access_token" json:"access_token"`
+	RefreshToken string `mapstructure:"refresh_token" json:"refresh_token"`
+	CreatedAt    string `mapstructure:"created_at" json:"created_at"`
+	ExpiresIn    string `mapstructure:"expires_in" json:"expires_in"`
+	ExpiresAt    string `mapstructure:"expires_at" json:"expires_at"`
+
+	ConfigFile string
 }
 
-type refreshToken struct {
-	Scope        string `json:"scope"`
-	TokeType     string `json:"token_type"`
-	ExpiresIn    int64  `json:"expires_in"`
-	AccessToken  string `json:"access_token"`
-	RefreshToken string `json:"refresh_token"`
-}
-
-// parseAgaveConfig reads the agave credentials file and stores it as an
-// agaveConfigs struct.
-func parseAgaveConfig(filename string) (*agaveConfigs, error) {
-	configFile, err := os.Open(filename)
+// SaveConfig updates the value of the configuration file based on the
+// contents fo the Configurations struct.
+func (c *Configurations) SaveConfig() error {
+	// Open config file.
+	configFile, err := os.OpenFile(c.ConfigFile, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0755)
 	if err != nil {
-		fmt.Printf("Error opening JSON file: %s\n", err)
-		return nil, err
-	}
-	defer configFile.Close()
-
-	var agaveConf agaveConfigs
-	if err := json.NewDecoder(configFile).Decode(&agaveConf); err != nil {
-		fmt.Printf("Error decoding JSON file: %s\n", err)
-		return nil, err
-	}
-
-	return &agaveConf, nil
-}
-
-func updateAgaveConfig(filename string, agaveConf *agaveConfigs) error {
-	configFile, err := os.OpenFile(filename, os.O_RDWR|os.O_CREATE, 0755)
-	if err != nil {
-		fmt.Printf("Error opening file for read and write: %s\n", err)
+		fmt.Printf("SaveConfig error opening file '%s' for read and write: %s  %s\n", c.ConfigFile, err)
 		return err
 	}
 	defer configFile.Close()
 
+	// Write values to file.
 	encoder := json.NewEncoder(configFile)
 	encoder.SetIndent("", "\t")
-	if err := encoder.Encode(&agaveConf); err != nil {
+	if err := encoder.Encode(c); err != nil {
 		fmt.Printf("Error writing to file: %s\n", err)
 		return err
 	}
@@ -72,57 +49,51 @@ func updateAgaveConfig(filename string, agaveConf *agaveConfigs) error {
 }
 
 func main() {
-	agaveConf, err := parseAgaveConfig("config.json")
+	// Read config file.
+	viper.SetConfigName("config")
+	viper.AddConfigPath(".")
+	viper.AddConfigPath("$HOME")
+	var conf Configurations
+
+	if err := viper.ReadInConfig(); err != nil {
+		fmt.Printf("Error reading configuration file: %s\n", err)
+		os.Exit(1)
+	}
+
+	if err := viper.Unmarshal(&conf); err != nil {
+		fmt.Printf("Error decoding into struct: %s\n", err)
+		os.Exit(1)
+	}
+	conf.ConfigFile = viper.ConfigFileUsed()
+
+	// Refresh Token.
+	createdAt, err := strconv.ParseInt(conf.CreatedAt, 10, 64)
 	if err != nil {
 		fmt.Println(err)
+		os.Exit(1)
 	}
-
-	endpoint := "https://api.tacc.utexas.edu//token"
-	v := url.Values{}
-	v.Set("grant_type", "refresh_token")
-	v.Set("scope", "PRODUCTION")
-	v.Set("refresh_token", agaveConf.RefreshToken)
-	data := v.Encode()
-	req, err := http.NewRequest("POST", endpoint, strings.NewReader(data))
-	req.SetBasicAuth(agaveConf.ApiKey, agaveConf.ApiSecret)
-	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	ExpiresIn, err := strconv.ParseInt(conf.ExpiresIn, 10, 64)
 	if err != nil {
-		fmt.Printf("Error building request: %s\n", err)
+		fmt.Println(err)
+		os.Exit(1)
 	}
-
-	client := &http.Client{
-		Timeout: time.Second * 10,
-	}
-	resp, err := client.Do(req)
-	if err != nil {
-		fmt.Printf("Error making request: %s\n", err)
-	}
-	defer resp.Body.Close()
-
-	fmt.Printf("response Status: %v\n", resp.Status)
-	fmt.Printf("response Headers: %s\n", resp.Header["Date"])
-
-	bodyBytes, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		fmt.Printf("Error reading response body: %s\n", err)
-	}
-	resp.Body = ioutil.NopCloser(bytes.NewBuffer(bodyBytes))
-	fmt.Println("Response: ", string(bodyBytes))
-
-	if resp.StatusCode == http.StatusOK {
-		var refreshedToken refreshToken
-		if err := json.NewDecoder(resp.Body).Decode(&refreshedToken); err != nil {
-			fmt.Printf("Error decoding response body: %s\n", err)
-			os.Exit(1)
-		}
-
-		agaveConf.RefreshToken = refreshedToken.RefreshToken
-		agaveConf.AccessToken = refreshedToken.AccessToken
-
-		if err := updateAgaveConfig("config.json", agaveConf); err != nil {
+	now := time.Now().Unix() - 100
+	// Check if token needs to be refreshed.
+	if (createdAt + ExpiresIn) < now {
+		fmt.Fprintln(os.Stderr, "Refreshing token...")
+		if err := conf.RefreshAPIToken(); err != nil {
 			fmt.Println(err)
 			os.Exit(1)
 		}
 	}
 
+	// Check keys for user.
+	if len(os.Args) <= 1 {
+		os.Exit(1)
+	}
+	username := os.Args[1]
+	if err := conf.GetUserPubKeys(username); err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
 }
