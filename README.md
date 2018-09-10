@@ -12,3 +12,21 @@ command:
 ```
 make ssh
 ```
+
+
+For some simple benchmarks comparing the two ways to login:
+```
+perf stat -r 10 -d make ssh-norm-cmd
+```
+
+and 
+```
+perf stat -r 10 -d make ssh-cmd
+```
+
+
+Note, to kill the container running the ssh server you can try (if it is the
+only container running)
+```
+docker rm -f $(ps -q)
+```
