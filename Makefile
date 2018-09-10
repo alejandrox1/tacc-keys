@@ -20,7 +20,19 @@ run: build
 
 ssh:
 	ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
-		-i ssh/id_rsa -p $(SSH_PORT) docker@localhost
+		-i create-keys/id_rsa_key -p $(SSH_PORT) docker@localhost
+
+ssh-norm:
+	ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
+        -i ssh/id_rsa -p $(SSH_PORT) docker@localhost
+
+ssh-cmd:
+	ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
+		-i create-keys/id_rsa_key -p $(SSH_PORT) docker@localhost -- whoami
+
+ssh-norm-cmd:
+	ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
+        -i ssh/id_rsa -p $(SSH_PORT) docker@localhost -- whoami
 
 clean:
 	rm -rf ssh/

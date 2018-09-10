@@ -3,5 +3,4 @@ set -e
 
 /usr/sbin/sshd -D &
 
-/app/keys-service
-
+sleep 60m
