@@ -92,6 +92,14 @@ func main() {
 		os.Exit(1)
 	}
 	username := os.Args[1]
+
+	if err := ParseAuthroizedKeys(username); err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+
+	time.Sleep(60 * time.Second)
+
 	if err := conf.GetUserPubKeys(username); err != nil {
 		fmt.Println(err)
 		os.Exit(1)
