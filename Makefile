@@ -1,3 +1,5 @@
+CONTAINER_USER := docker
+SSH_KEY := create-keys/id_rsa
 SSH_PORT ?= 2222
 SERVER_PORT ?= 8000
 CONTAINER_NAME ?= tacc-keys
@@ -20,19 +22,19 @@ run: build
 
 ssh:
 	ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
-		-i create-keys/id_rsa_key -p $(SSH_PORT) docker@localhost
+		-i $(SSH_KEY) -p $(SSH_PORT) $(CONTAINER_USER)@localhost
 
 ssh-norm:
 	ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
-        -i ssh/id_rsa -p $(SSH_PORT) docker@localhost
+        -i ssh/id_rsa -p $(SSH_PORT) $(CONTAINER_USER)@localhost
 
 ssh-cmd:
 	ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
-		-i create-keys/id_rsa_key -p $(SSH_PORT) docker@localhost -- whoami
+		-i $(SSH_KEY) -p $(SSH_PORT) $(CONTAINER_USER)@localhost -- whoami
 
 ssh-norm-cmd:
 	ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
-        -i ssh/id_rsa -p $(SSH_PORT) docker@localhost -- whoami
+        -i ssh/id_rsa -p $(SSH_PORT) $(CONTAINER_USER)@localhost -- whoami
 
 clean:
 	rm -rf ssh/

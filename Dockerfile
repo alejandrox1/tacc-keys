@@ -1,10 +1,13 @@
 FROM golang:1.11.0-stretch AS base
 
-WORKDIR /src
-ADD agave-config/ /src/
-RUN go get github.com/gorilla/handlers \
-    && go get github.com/gorilla/mux \
-    && go get github.com/spf13/viper \
+
+WORKDIR /go/src/github.com
+
+ADD agave-config/ /go/src/github.com/agave-config/
+RUN cd /go/src/github.com/agave-config/ \
+    && go get -d -v github.com/gorilla/handlers \
+    && go get -d -v  github.com/gorilla/mux \
+    && go get -d -v github.com/spf13/viper \
     && go build -o userkeys
 
 
@@ -41,8 +44,9 @@ RUN adduser ${USER} \
     && chown -R ${USER}:${USER} ${SSHDIR}
 
 WORKDIR /app
-COPY --from=base /src/userkeys /usr/local/bin/userkeys
-COPY --from=base /src/config.json /config.json
+COPY --from=base /go/src/github.com/agave-config/userkeys /usr/local/bin/userkeys
+COPY --from=base /go/src/github.com/agave-config/config.json /config.json
+COPY --from=base /go/src/github.com/agave-config/config.json /home/${USER}/config.json
 
 ENV HOME=/home/${USER}
 RUN chmod 755 /usr/local/bin/userkeys \
