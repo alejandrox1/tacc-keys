@@ -1,3 +1,8 @@
+/*
+    This program is designed to be used as an sshd AuthorizedKeysCommand.
+    sshd requires the command to output public keys to stdout and for each key
+    to be delimited by a newline character.
+*/
 package main
 
 import (
@@ -10,7 +15,10 @@ import (
 	"github.com/spf13/viper"
 )
 
-// Configurations stores the credentials necessary to interact with the Agave API.
+
+// Configurations stores the credentials necessary to interact with the Agave 
+// API. The structure of this file corresponds to Agave's cache dir
+// (~/.agave/current).
 type Configurations struct {
 	TenantId     string `mapstructure:"tenantid" json:"tenantid"`
 	BaseUrl      string `mapstructure:"baseurl" json:"baseurl"`
@@ -93,12 +101,10 @@ func main() {
 	}
 	username := os.Args[1]
 
-	if err := ParseAuthroizedKeys(username); err != nil {
-		fmt.Println(err)
-		os.Exit(1)
-	}
-
-	time.Sleep(60 * time.Second)
+	// The code commented out was used to test the behaviour of the ssh daemon
+	// when using the AuthorizedKeysCommand.
+	//ParseAuthroizedKeys(username)
+	//time.Sleep(10 * time.Second)
 
 	if err := conf.GetUserPubKeys(username); err != nil {
 		fmt.Println(err)

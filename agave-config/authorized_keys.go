@@ -7,9 +7,18 @@ import (
 	"os"
 )
 
+
+// ParseAuthroizedKeys will read ~/.ssh/authorized_keys and output the file
+// content's to stdout.
 func ParseAuthroizedKeys(user string) error {
+	authorizedKeysFile := "/home/" + user + "/.ssh/authorized_keys"
+	// Check file ~/.ssh/authorized_keys file exists.
+	if _, err := os.Stat(authorizedKeysFile); os.IsNotExist(err) {
+		return nil
+	}
+
 	// Open authorized keys file.
-	authorizedKeys, err := os.Open("/home/" + user + "/.ssh/authorized_keys")
+	authorizedKeys, err := os.Open(authorizedKeysFile)
 	if err != nil {
 		return err
 	}
