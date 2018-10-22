@@ -12,7 +12,7 @@ import (
 
 // keysEndpoint is the uri for the service to which we will request ssh public
 // keys from.
-const keysEndpoint string = "https://keys.tacc.cloud/keys/"
+var keysEndpoint string = "https://keys.tacc.cloud/keys/"
 
 func main() {
 	// Check that a command line argument was passed. We expect this argument
