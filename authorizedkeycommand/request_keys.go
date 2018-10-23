@@ -11,26 +11,26 @@ import (
 )
 
 // GetUserPubKeys makes a request for plain-text public keys for a given user.
-func GetUserPubKeys(user string) error {
+func GetUserPubKeys(w io.Writer, user string) error {
 	// Keys endpoint.
-	reqEndpoint := keysEndpoint + user + "/text"
+	reqEndpoint := keysEndpoint + "/" + user + "/text"
 
 	// Make request.
 	req, err := http.NewRequest("GET", reqEndpoint, nil)
 	if err != nil {
-		fmt.Printf("Error building request: %s\n", err)
+		fmt.Fprintf(w, "Error building request: %s\n", err)
 		return err
 	}
 
-	// Create HTTP client with timeout of 10s.
+	// Create HTTP client with timeout of 5s.
 	client := &http.Client{
-		Timeout: time.Second * 10,
+		Timeout: time.Second * 5,
 	}
 
 	// Make HTTP request.
 	resp, err := client.Do(req)
 	if err != nil {
-		fmt.Printf("Error making request: %s\n", err)
+		fmt.Fprintf(w, "Error making request: %s\n", err)
 		return err
 	}
 	defer resp.Body.Close()
@@ -48,7 +48,7 @@ func GetUserPubKeys(user string) error {
 
 				return err
 			}
-			fmt.Printf("%s", key)
+			fmt.Fprintf(w, "%s", key)
 		}
 	} else { // API call returned an error.
 		body, err := ioutil.ReadAll(resp.Body)

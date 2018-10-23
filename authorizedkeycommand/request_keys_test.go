@@ -1,18 +1,29 @@
 package main
 
 import (
-    "fmt"
-    "net/http"
-    "net/http/httptest"
-    "testing"
+	"bytes"
+	"fmt"
+	"net/http"
+	"net/http/httptest"
+	"testing"
 )
 
-
 func TestGetUserPubKeys(t *testing.T) {
-    ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-        fmt.Fprintf(w, "ssh-rsa some-key-contents")
-    }))
-    defer ts.Close()
+	// Mock host/<username>/text endpoint.
+	m := http.NewServeMux()
+	m.HandleFunc("/test/text", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintf(w, "\n\nssh-rsa some-key-contents\n")
+	}))
+	ts := httptest.NewServer(m)
+	defer ts.Close()
 
-    keysEndpoint = ts.URL
+	// Set url.
+	keysEndpoint = ts.URL
+
+	var buf bytes.Buffer
+	username := "test"
+	if err := GetUserPubKeys(&buf, username); err != nil {
+		t.Error(err)
+	}
+	t.Logf("\n'%s'\n", buf.String())
 }

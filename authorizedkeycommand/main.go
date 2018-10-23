@@ -1,7 +1,6 @@
-/*
-   This program is designed to be used as an sshd AuthorizedKeysCommand.
-   sshd requires the command to output public keys to stdout and for each key
-   to be delimited by a newline character.
+/*This program is designed to be used as an sshd AuthorizedKeysCommand.
+sshd requires the command to output public keys to stdout and for each key
+to be delimited by a newline character.
 */
 package main
 
@@ -12,7 +11,7 @@ import (
 
 // keysEndpoint is the uri for the service to which we will request ssh public
 // keys from.
-var keysEndpoint string = "https://keys.tacc.cloud/keys/"
+var keysEndpoint = "https://keys.tacc.cloud/keys"
 
 func main() {
 	// Check that a command line argument was passed. We expect this argument
@@ -22,8 +21,8 @@ func main() {
 	}
 
 	username := os.Args[1]
-
-	if err := GetUserPubKeys(username); err != nil {
+	writeTo := os.Stdout
+	if err := GetUserPubKeys(writeTo, username); err != nil {
 		fmt.Println(err)
 		os.Exit(1)
 	}
