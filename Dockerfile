@@ -45,7 +45,7 @@ WORKDIR /app
 COPY --from=base /go/src/github.com/authorizedkeycommand/userkeys /usr/local/bin/userkeys
 
 ENV HOME=/home/${USER}
-RUN chmod 755 /usr/local/bin/userkeys # \
+RUN chmod 755 /usr/local/bin/userkeys
 
 # Run ssh daemon and keys service.
 EXPOSE 22
