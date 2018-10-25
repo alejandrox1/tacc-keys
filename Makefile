@@ -1,5 +1,5 @@
 CONTAINER_USER := docker
-SSH_KEY := create-keys/id_rsa
+SSH_KEY := ssh/id_rsa
 SSH_PORT ?= 2222
 SERVER_PORT ?= 8000
 CONTAINER_NAME ?= tacc-keys

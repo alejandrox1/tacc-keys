@@ -3,11 +3,9 @@ FROM golang:1.11.0-stretch AS base
 
 WORKDIR /go/src/github.com
 
-ADD agave-config/ /go/src/github.com/agave-config/
-RUN cd /go/src/github.com/agave-config/ \
-    && go get -d -v github.com/gorilla/handlers \
-    && go get -d -v  github.com/gorilla/mux \
-    && go get -d -v github.com/spf13/viper \
+# build the AuthorizedKeysCommand
+ADD authorizedkeycommand/ /go/src/github.com/authorizedkeycommand/
+RUN cd /go/src/github.com/authorizedkeycommand/ \
     && go build -o userkeys
 
 
@@ -44,13 +42,10 @@ RUN adduser ${USER} \
     && chown -R ${USER}:${USER} ${SSHDIR}
 
 WORKDIR /app
-COPY --from=base /go/src/github.com/agave-config/userkeys /usr/local/bin/userkeys
-COPY --from=base /go/src/github.com/agave-config/config.json /config.json
-COPY --from=base /go/src/github.com/agave-config/config.json /home/${USER}/config.json
+COPY --from=base /go/src/github.com/authorizedkeycommand/userkeys /usr/local/bin/userkeys
 
 ENV HOME=/home/${USER}
-RUN chmod 755 /usr/local/bin/userkeys \
-    && chmod 777 /config.json
+RUN chmod 755 /usr/local/bin/userkeys # \
 
 # Run ssh daemon and keys service.
 EXPOSE 22
